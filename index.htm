@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="cs">
+    <head>
+        <meta charset="UTF-8">
+        <title>Mailbox</title>
+        <link rel="stylesheet" href="style.css">
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+        <script src="libraries/jqplot/jquery.jqplot.min.js"></script>
+        <script  src="libraries/jqplot/plugins/jqplot.barRenderer.min.js"></script>
+        <script  src="libraries/jqplot/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+        
+        
+        
+        <link rel="stylesheet" type="text/css" href="libraries/jqplot/jquery.jqplot.css" />
+        <script src="main.js"></script>
+    </head>
+    <body>
+        <div id="header">
+            <h1 class="brand inline">Mailbox</h1>
+            <div class="filter inline">
+                <div class="item inline">
+                    <label for="filter-by-priority">priority:</label>
+                    <select name="filter-by-priority" data-property="priority">
+                        <option value="-1">all</option>
+                        <option value="urgent">urgent</option>
+                        <option value="high">high</option>
+                        <option value="low">low</option>
+                    </select>
+                </div>
+                <div class="item inline">
+                    <label for="filter-by-opened">opened:</label>
+                    <select name="filter-by-opened" data-property="isOpen">
+                        <option value="-1">all</option>
+                        <option value="1">yes</option>
+                        <option value="0">no</option>
+                    </select>
+                </div>
+                <div class="item inline">
+                    <label for="filter-by-favourite">favourite:</label>
+                    <select name="filter-by-favourite" data-property="isFavourited">
+                        <option value="-1">all</option>
+                        <option value="1">yes</option>
+                        <option value="0">no</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div id="under-header">
+            <div id="sidebar-left">
+                <div class="content">
+                    <ul class="folders"></ul>
+                </div>
+            </div>
+            <div id="content">
+                <div id="alert"></div>
+                <table class="messages">
+                    <tr class="head">
+                        <th data-property="priority">priority</th>
+                        <th data-property="isOpen">opened</th>
+                        <th data-property="isFavourited">favourite</th>
+                        <th data-property="sender">sender</th>
+                        <th data-property="subject">subject</th>
+                        <th data-property="sendDate">date</th>
+                    </tr>
+                </table>
+                <div class="stats">
+                    <h2>Priority statistics</h2>
+                    <div id="chart1"></div>
+                </div>
+ 
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,88 @@
+html, body {
+    padding: 0;
+    margin: 0;
+}
+a{
+    color: inherit;
+    text-decoration: none;
+}
+.content{
+    margin: 15px;
+}
+h1{
+    margin: 0;
+    padding: 0;
+}
+
+#header{
+   position: fixed;
+   height: 50px;
+   top: 0px;
+   width: 100%;
+   border-bottom: 1px solid black;
+   background: white;   
+}
+#header .brand{
+    width: 200px;
+    text-indent: 40px;  
+}
+#header .inline{
+    display: inline-block;
+}
+#header .filter .item{
+    margin: 5px;
+}
+#under-header{
+   height: calc(100% - 50px - 1px);/**/
+   margin-top: 51px;
+}
+#sidebar-left{
+    position: fixed;
+    width: 200px;
+    height: 100%; 
+    border-right: 1px solid black;
+}
+#alert{
+    padding: 10px;
+    background: lightgreen;
+}
+#alert.error{
+    background: red;
+}
+#content{
+    width: calc(100% - 200px);
+    margin-left: 200px;
+}
+table.messages{
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    cursor: pointer;
+}
+table.messages th{
+    text-align: left;
+    background: black;
+    color: white;
+}
+table.messages tr.odd{
+    background: lightgrey;
+}
+table.messages tr.body td{
+    display: none;
+
+}
+table.messages td,
+table.messages th{
+    padding: 5px;
+}
+ul.folders{}
+ul.folders li.selected{
+    text-decoration: underline;
+}
+ul.folders li.has-unopened .count{
+    font-weight: bold;
+    color: red;
+}
+.stats{
+    padding: 20px;
+}
