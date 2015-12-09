@@ -1,11 +1,7 @@
 ﻿TODO:
 
-- povolit Access-Control-Allow-Origin na serveru a zrušit režim isRemoteClient
-- dořešit získávání id zprávy (přidat atribut ID do objektu zprávy na straně serveru)
 - otevírat zprávu v dialogu (zrušit ukazování buňky)
 - priority, isOpen a isFavourited - ikonky namísto checkboxů ve výpisu zpráv
-- přebírat id složky z url po refreshi prohlížeče
-- naformátovat výpis datumu ve výpisu zpráv
 - řazení výpisu zpráv podle priority (ne abecedně)
 - mazání zpráv
 

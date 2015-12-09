@@ -1,3 +1,22 @@
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('#') + 1).split('&');
+    console.log(hashes);
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+
+
 /**
  * Objekt Mailbox
  * 
@@ -8,11 +27,6 @@ var Mailbox = {
      * @type String
      */
     serverUrl: 'http://guess.dev.altworx.com',
-    /**
-     * Je klient na jiné doméně? Pokud ano, musí ojebat Access-Control-Allow-Origin při REST připojení
-     * @type Boolean
-     */
-    isRemoteClient: true,
     /**
      * Složky pro zprávy
      * @type Array
@@ -53,38 +67,22 @@ var Mailbox = {
      */
     error: false,
     /**
-     * Načte zprávy ze vzdáleného serveru
+     * Načte seznam složek ze vzdáleného serveru
      */
     initFolders: function(){
         var folders = null;
-        if(this.isRemoteClient){
-            $.ajax({
-                url: 'scripts/getRemoteJson.php',
-                type: 'GET',
-                async: false,
-                data: 'resource='+Mailbox.serverUrl+'/api/folders', 
-                dataType: 'json',
-                success: function(data) { 
-                    folders = data.folders;
-                },
-                error: function(data) {
-                    //TODO
-                }
-            });
-        }
-        else{
-            $.ajax({
-                url: '/api/folders',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) { 
-                    folders = data;
-                },
-                error: function(data) {
-                    //TODO
-                }
-            });
-        }
+        $.ajax({
+            url: Mailbox.serverUrl+'/api/folders',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) { 
+                folders = data.folders;
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
         this.folders = folders;
         this.sortList('folders','order');
     },
@@ -93,40 +91,21 @@ var Mailbox = {
      */
     initMessages: function(){
         var messages = null;
-        if(this.isRemoteClient){
-            $.ajax({
-                url: 'scripts/getRemoteJson.php',
-                type: 'GET',
-                async: false,
-                data: 'resource='+Mailbox.serverUrl+'/api/messages'+(this.selectedFolder?'?folder='+this.selectedFolder:''), 
-                dataType: 'json',
-                success: function(data) { 
-                    messages = data;
-                },
-                error: function(data) {
-                    //TODO
-                }
-            });
-        }
-        else{
-            $.ajax({
-                url: '/api/messages'+(this.selectedFolder?'?folder='+this.selectedFolder:''),
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) { 
-                    messages = data;
-                },
-                error: function(data) {
-                    //TODO
-                }
-            });
-        }
+        $.ajax({
+            url: Mailbox.serverUrl+'/api/messages'+(this.selectedFolder?'?folder='+this.selectedFolder:''),
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) { 
+                messages = data;
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
         this.messages = messages.messages;
         this.filteredMessages = this.messages;
         this.lastUpdate = messages.lastUpdate;
-        if(!this.messages.length){
-            this.alert = 'You have no messages';
-        }
         this.sortList('messages','sendDate', true);
 
     },
@@ -168,7 +147,7 @@ var Mailbox = {
                     .attr('data-id', folder.id)
             ;
             var a = $('<a />')
-                    .attr('href', '#foder='+folder.id)
+                    .attr('href', '#folder='+folder.id)
                     .append(folder.name + ' (<span class="count">' + folder.messageCount + '</span>)')
             ;             
            li.append(a);
@@ -182,6 +161,7 @@ var Mailbox = {
      * @param {Boolean} doNotInit nenačítat znovu ze serveru
      */
     loadMessages: function(doNotInit){
+        this.alert = null;    
         this.showAlert('Loading messages...');
         if(doNotInit !== true){
             this.initMessages();    
@@ -191,7 +171,8 @@ var Mailbox = {
             var tr = $('<tr />')
                     .addClass((i%2)?'even':'odd')
                     .addClass('header')
-                    .attr('data-id', i)
+                    .attr('data-id', message.id)
+                    .attr('data-index', i)
             ;
             var trBody = $('<tr />')
                     .addClass((i%2)?'even':'odd')
@@ -212,6 +193,12 @@ var Mailbox = {
             trBody.append('<td colspan="6">' + message.body + '</td>');
             $('table.messages').append(tr).append(trBody);
         });
+        if(!this.filteredMessages.length && this.messages.length>0){
+            this.alert = 'No item matches filter criteria. Change filter settings.';
+        }
+        if(!this.messages.length){
+            this.alert = 'You have no messages';
+        }
         this.hideAlert();
         if(this.alert){
             this.showAlert(this.alert, this.error);
@@ -243,6 +230,7 @@ var Mailbox = {
             Mailbox.selectedFolder = $(this).data('id');
             Mailbox.loadMessages();
             $(this).addClass('selected');
+            $('.filter :input').change();
         });    
     },
     /**
@@ -250,7 +238,7 @@ var Mailbox = {
      */
     listenMessages: function(){
         //open message
-        $('table.messages tr.header td:not(.is-favourited)').on('click', function(){
+        $('table.messages tr.header td:not(.is-favourited)').click(function(){
             Mailbox.hideAlert();
             if($(this).parent('tr').next('tr.body').find('td').is(':visible')){
                 $(this).parent('tr').next('tr.body').find('td').hide();
@@ -260,21 +248,19 @@ var Mailbox = {
                 $(this).parent('tr').next('tr.body').find('td').show();  
                 if(!$(this).parent('tr').find('td.is-open :input').is(':checked')){
                    $(this).parent('tr').find('td.is-open :input').attr('checked',true);
-                   Mailbox.messages[$(this).parent('tr').data('id')].isOpen = true;
-                   Mailbox.updateMessage($(this).parent('tr').data('id'));
+                   Mailbox.updateMessage($(this).parent('tr').data('id'), 'isOpen', true);
                 }
             }  
         });
         
         //mark message as favourited
         $('table.messages td.is-favourited :input').change(function(){
-            if($(this).is(':checked')){
-                Mailbox.messages[$(this).parents('tr').data('id')].isFavourited = true;    
+            if($(this).is(':checked')){ 
+                Mailbox.updateMessage($(this).parents('tr').data('id'), 'isFavourited', true); 
             }
             else{
-                Mailbox.messages[$(this).parents('tr').data('id')].isFavourited = false;  
+                Mailbox.updateMessage($(this).parents('tr').data('id'), 'isFavourited', false); 
             }
-            Mailbox.updateMessage($(this).parents('tr').data('id'));  
         });
     },
     /**
@@ -302,55 +288,70 @@ var Mailbox = {
      * @returns {String}
      */
     dateFormat: function(str){
-        //TODO
-        return str;
+        var timestamp = Date.parse(str);
+        var d = new Date(timestamp);
+        
+        //http://stackoverflow.com/questions/3066586
+        var yyyy = d.getFullYear();
+        var mm = d.getMonth() < 9 ? "0" + (d.getMonth() + 1) : (d.getMonth() + 1); // getMonth() is zero-based
+        var dd  = d.getDate() < 10 ? "0" + d.getDate() : d.getDate();
+        var hh = d.getHours() < 10 ? "0" + d.getHours() : d.getHours();
+        var min = d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes();
+        var ss = d.getSeconds() < 10 ? "0" + d.getSeconds() : d.getSeconds();
+        return dd+'.'+mm+'.'+yyyy+' '+hh+':'+min+':'+ss;
+
     },
     /**
-     * Otevře zprávu k přečtení a označí ji jako přečtenou
-     * @param {Int} id nevíme odkud vzít
-     */
-    openMessage: function(id){//deprecated - use updateMessage()
-        this.messages[id].isOpen = true;
-        if(this.isRemoteClient){
-            this.showAlert('Remote server can not mark message as opened', true);
-        }
-        else{
-            $.ajax({
-                url: '/api/messages/'+id,//jako id bereme index (provizorně)
-                type: 'put',
-                dataType: 'json',
-                data: this.messages[id],
-                success: function(data) { 
-                    //TODO
-                },
-                error: function(data){
-                    //TODO
-                }
-            });
-        } 
-    },
-    /**
-     * Update zprávy na serveru
+     * Vrátí objekt zprávy s daným ID
      * @param {Int} id
+     * @returns {Object}
      */
-    updateMessage: function(id){
-        if(this.isRemoteClient){
-            this.showAlert('Remote server can not update message', true);
-        }
-        else{
-            $.ajax({
-                url: '/api/messages/'+id,//jako id bereme index
-                type: 'put',
-                dataType: 'json',
-                data: this.messages[id],
-                success: function(data) { 
-                    //TODO
-                },
-                error: function(data){
-                    //TODO
-                }
-            });
-        }  
+    getMsgObjectById: function(id){
+        $.each(this.messages, function(msg){
+            if(msg.id===id){
+                return msg;
+            }
+        });
+        return null;
+    },
+    /**
+     * Update zprávy a vložení změny na server
+     * @param {Int} id ID zprávy
+     * @param {String} propertyName název změněmého atributu
+     * @param {String} propertyValue hodnota změněného atributu
+     */
+    updateMessage: function(id, propertyName, propertyValue){
+        
+        $.each(this.messages, function(i, msg){
+            if(msg.id===id){
+                Mailbox.messages[i][propertyName] = propertyValue;
+            }
+        });
+        
+        $.each(this.filteredMessages, function(i, msg){
+            if(msg.id===id){
+                Mailbox.filteredMessages[i][propertyName] = propertyValue;
+            }
+        });
+        
+        $.ajax({
+            url: Mailbox.serverUrl+'/api/messages/'+id,
+            type: 'PUT',
+            async: false,
+            dataType: 'json',
+            data: Mailbox.getMsgObjectById(id),
+            //data: JSON.stringify(Mailbox.getMsgObjectById(id)),
+            success: function(data) { 
+                this.showAlert('Message was successfully updated on remote server. ' + data.statusText);
+            },
+            error: function(data){
+                console.log(data);
+                Mailbox.showAlert('Message update failure:<br />' + data.statusText,true);
+                console.log(Mailbox.messages);
+                console.log(Mailbox.filteredMessages);
+            }
+        });
+     
     },
     /**
      * Vyfiltruje zprávy dle zvolených atributů
@@ -455,6 +456,11 @@ var Statistics = {
  * 
  */
 $().ready(function(){ 
+    
+    var selectedFolder = $.getUrlVar('folder');
+    if(selectedFolder){
+        Mailbox.selectedFolder = selectedFolder;
+    }
 
     Mailbox.load();
     //console.log(Mailbox.folders);
